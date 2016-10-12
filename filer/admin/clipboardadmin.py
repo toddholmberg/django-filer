@@ -2,12 +2,16 @@
 from __future__ import absolute_import
 
 import json
+import os
+import pyclamd
 
 from django.conf.urls import url
 from django.contrib import admin
 from django.forms.models import modelform_factory
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.translation import LANGUAGE_SESSION_KEY
+from django.contrib.auth.signals import user_logged_out
 
 from . import views
 from .. import settings as filer_settings
@@ -115,6 +119,14 @@ def ajax_upload(request, folder_id=None):
         uploadform = FileForm({'original_filename': filename,
                                'owner': request.user.pk},
                               {'file': upload})
+
+        file_infected = False
+        cd = pyclamd.ClamdAgnostic()
+        scan_result = cd.scan_file(upload.file.name)
+        if scan_result is not None:
+            file_infected = True
+            raise UploadException(file_infected=file_infected)
+
         if uploadform.is_valid():
             file_obj = uploadform.save(commit=False)
             # Enforce the FILER_IS_PUBLIC_DEFAULT
@@ -181,6 +193,38 @@ def ajax_upload(request, folder_id=None):
                 "AJAX request not valid: form invalid '%s'" % (
                     form_errors,))
     except UploadException as e:
-        return HttpResponse(json.dumps({'error': str(e)}),
-                            status=500,
-                            **response_params)
+        if 'file_infected' in e.args:
+            print("Removing {0}".format(upload.file.name))
+            os.remove(upload.file.name)
+            force_logout(request)
+        else:
+            return HttpResponse(json.dumps({'error': str(e)}),
+                                status=500,
+                                **response_params)
+
+
+def force_logout(request):
+    """
+    Alternative logout method used when ClaAV detects a virus in a file upload.
+
+    Removes the authenticated user's ID from the request and flushes their
+    session data.
+    """
+    # Dispatch the signal before the user is logged out so the receivers have a
+    # chance to find out *who* logged out.
+    user = getattr(request, 'user', None)
+    if hasattr(user, 'is_authenticated') and not user.is_authenticated:
+        user = None
+    user_logged_out.send(sender=user.__class__, request=request, user=user, virus_detected=True)
+
+    # remember language choice saved to session
+    language = request.session.get(LANGUAGE_SESSION_KEY)
+
+    request.session.flush()
+
+    if language is not None:
+        request.session[LANGUAGE_SESSION_KEY] = language
+
+    if hasattr(request, 'user'):
+        from django.contrib.auth.models import AnonymousUser
+        request.user = AnonymousUser()
