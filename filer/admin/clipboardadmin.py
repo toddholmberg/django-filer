@@ -203,7 +203,9 @@ def ajax_upload(request, folder_id=None):
                                 **response_params)
     except VirusDetectionException as e:
         print("Removing {0}".format(e.infected_file))
-        os.remove(e.infected_file)
+        # django cleans up the temp file, but just in case...
+        if os.path.isfile(e.infected_file):
+            os.remove(e.infected_file)
         force_logout(request)
 
 
