@@ -14,16 +14,16 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name="django-filer",
+    name="django-filer-antivirus",
     version=version,
-    url='http://github.com/divio/django-filer',
+    url='https://github.com/toddholmberg/django-filer-antivirus',
     license='BSD',
     platforms=['OS Independent'],
     description="A file management application for django that makes handling "
-                "of files and images a breeze.",
+                "of files and images a breeze. Now with file upload antivirus checking!",
     long_description = read('README.rst'),
-    author='Stefan Foulis',
-    author_email='stefan@foulis.ch',
+    author='Todd Holmberg',
+    author_email='todd@welikesmall.com',
     packages=find_packages(),
     install_requires=(
         'Django>=1.5,<1.10.999',  # Django is known to use rc versions
@@ -50,6 +50,7 @@ setup(
         'Framework :: Django :: 1.7',
         'Framework :: Django :: 1.8',
         'Framework :: Django :: 1.9',
+        'Framework :: Django :: 1.10',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.4',

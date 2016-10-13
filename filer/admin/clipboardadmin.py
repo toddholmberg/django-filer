@@ -73,6 +73,12 @@ class ClipboardAdmin(admin.ModelAdmin):
         }
 
 
+class VirusDetectionException(Exception):
+    def __init__(self, message, infected_file=None):
+        self.infected_file = infected_file
+        Exception.__init__(self, message)
+
+
 @csrf_exempt
 def ajax_upload(request, folder_id=None):
     """
@@ -120,12 +126,11 @@ def ajax_upload(request, folder_id=None):
                                'owner': request.user.pk},
                               {'file': upload})
 
-        file_infected = False
         cd = pyclamd.ClamdAgnostic()
         scan_result = cd.scan_file(upload.file.name)
+        scan_result = 1
         if scan_result is not None:
-            file_infected = True
-            raise UploadException(file_infected=file_infected)
+            raise VirusDetectionException(infected_file=upload.file.name)
 
         if uploadform.is_valid():
             file_obj = uploadform.save(commit=False)
@@ -193,14 +198,13 @@ def ajax_upload(request, folder_id=None):
                 "AJAX request not valid: form invalid '%s'" % (
                     form_errors,))
     except UploadException as e:
-        if 'file_infected' in e.args:
-            print("Removing {0}".format(upload.file.name))
-            os.remove(upload.file.name)
-            force_logout(request)
-        else:
-            return HttpResponse(json.dumps({'error': str(e)}),
+        return HttpResponse(json.dumps({'error': str(e)}),
                                 status=500,
                                 **response_params)
+    except VirusDetectionException as e:
+        print("Removing {0}".format(e.infected_file))
+        os.remove(e.infected_file)
+        force_logout(request)
 
 
 def force_logout(request):

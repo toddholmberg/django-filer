@@ -11,6 +11,10 @@ CHANGELOG
 * Fixed dropzones in inlines not initializing in Django < 1.9
 * Added an action button to the directory listings to download files
 
+1.2.5.1 (2016-10-13)
+------------------
+
+* Added ClamAV support for file uploads
 
 1.2.5 (2016-09-05)
 ------------------
