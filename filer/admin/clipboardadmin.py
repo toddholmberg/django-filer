@@ -130,7 +130,10 @@ def ajax_upload(request, folder_id=None):
         scan_result = cd.scan_file(upload.file.name)
         scan_result = 1
         if scan_result is not None:
-            raise VirusDetectionException("Virus detected in {0}".format(upload.file.name), infected_file=upload.file.name)
+            raise VirusDetectionException(
+                "Virus detected in {0}".format(upload.file.name),
+                infected_file=upload.file.name
+            )
 
         if uploadform.is_valid():
             file_obj = uploadform.save(commit=False)
@@ -202,11 +205,11 @@ def ajax_upload(request, folder_id=None):
                                 status=500,
                                 **response_params)
     except VirusDetectionException as e:
-        print("Removing {0}".format(e.infected_file))
-        # django cleans up the temp file, but just in case...
-        if os.path.isfile(e.infected_file):
-            os.remove(e.infected_file)
         force_logout(request)
+        # django cleans up the temp file down stream
+        return HttpResponse(json.dumps({'error': str(e)}),
+                            status=500,
+                            **response_params)
 
 
 def force_logout(request):
