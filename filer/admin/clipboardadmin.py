@@ -130,7 +130,7 @@ def ajax_upload(request, folder_id=None):
         scan_result = cd.scan_file(upload.file.name)
         scan_result = 1
         if scan_result is not None:
-            raise VirusDetectionException(infected_file=upload.file.name)
+            raise VirusDetectionException("Virus detected in {0}".format(upload.file.name), infected_file=upload.file.name)
 
         if uploadform.is_valid():
             file_obj = uploadform.save(commit=False)
