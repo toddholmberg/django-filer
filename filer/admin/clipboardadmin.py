@@ -128,7 +128,6 @@ def ajax_upload(request, folder_id=None):
 
         cd = pyclamd.ClamdAgnostic()
         scan_result = cd.scan_file(upload.file.name)
-        scan_result = 1
         if scan_result is not None:
             raise VirusDetectionException(
                 "Virus detected in {0}".format(upload.file.name),
